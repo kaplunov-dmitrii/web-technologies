@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed, Relative, Absolute</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f6ebd9;
+            color: #333;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #b05c36;
+            margin-bottom: 40px;
+        }
+
+        section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .container {
+            background-color: #f1f3f9;
+            border: 1px double #c0c8db;
+            border-radius: 6px;
+            padding: 20px;
+            min-height: 100px;
+        }
+
+        .card {
+            width: 130px;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 14px;
+        }
+        .card strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .card p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .fixed-banner {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #791212;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 5px solid #d4af37;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 9999;
+            max-width: 200px;
+            font-size: 14px;
+        }
+
+        .relative-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .card-p2-relative {
+            position: relative;
+        }
+
+        .card-p2-c3 {
+            top: 20px;
+            left: 60px;
+        }
+        .card-p2-c4 {
+            top: 10px;
+            left: 30px;
+        }
+
+        .absolute-container-3 {
+            position: relative;
+            background-color: #e2ede4;
+            border: 1px solid #a3c4a8;
+            height: 250px;
+        }
+        .card-p3-absolute {
+            position: absolute;
+        }
+        .card-p3-c1 { top: 20px; left: 20px; z-index: 1; }
+        .card-p3-c2 { top: 50px; left: 60px; z-index: 2; }
+        .card-p3-c4 { top: 110px; left: 140px; z-index: 3; }
+        .card-p3-c3-top { 
+            position: absolute;
+            top: 80px; 
+            left: 100px; 
+            z-index: 10; 
+        }
+
+        .absolute-container-4 {
+            position: relative;
+            height: 300px;
+            background-color: #fbf3db;
+            border: 1px solid #e6d3a8;
+        }
+        .card-p4-absolute {
+            position: absolute;
+        }
+        .card-p4-top-left { top: 15px; left: 15px; }
+        .card-p4-top-right { top: 15px; right: 15px; }
+        .card-p4-bottom-left { bottom: 15px; left: 15px; }
+        .card-p4-bottom-right { bottom: 15px; right: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="fixed-banner">
+        <strong>📌 Fixed</strong>
+        Учимся позиционировать элементы
+    </div>
+
+    <h1>⚡ Fixed, Relative, Absolute ⚡</h1>
+
+    <section>
+        <h2>🦁 Часть 1. position: fixed</h2>
+        <p>
+            Тёмно-красное сообщение <strong>«Учимся позиционировать элементы»</strong> с золотой
+            полоской закреплено в правом верхнем углу окна. Оно <strong>не двигается при
+            прокрутке</strong> — это ключевое отличие fixed от absolute.
+        </p>
+        <p>
+            Свойства: <code>position: fixed; top: 20px; right: 20px;</code>.
+            Fixed позиционируется относительно <strong>окна браузера</strong>, а не родителя.
+        </p>
+    </section>
+
+    <section>
+        <h2>🦅 Часть 2. position: relative</h2>
+        <p>
+            Первые две карточки (синие) — без отступов, стоят в обычном потоке.
+            Вторые две (бронзовые) — со сдвигом через top/left. Место в потоке за ними
+            сохраняется, поэтому карточка №3 не «подъезжает» к №2.
+        </p>
+
+        <div class="container relative-container">
+            <div class="card card-p2-relative" style="background-color: #0d3b66; color: #fff;">
+                <strong>Карточка 1</strong>
+                <p>relative; без отступов</p>
+            </div>
+
+            <div class="card card-p2-relative" style="background-color: #164673; color: #fff;">
+                <strong>Карточка 2</strong>
+                <p>relative; без отступов</p>
+            </div>
+
+            <div class="card card-p2-relative card-p2-c3" style="background-color: #b87333; color: #fff;">
+                <strong>Карточка 3</strong>
+                <p>top: 20px; left: 60px;</p>
+            </div>
+
+            <div class="card card-p2-relative card-p2-c4" style="background-color: #cb8443; color: #fff;">
+                <strong>Карточка 4</strong>
+                <p>top: 10px; left: 30px;</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>🐍 Часть 3. position: absolute — перекрытие</h2>
+        <p>
+            Все карточки вырваны из потока и позиционируются относительно зелёного блока
+            (у него position: relative). <strong>Карточка №3 — верхняя</strong>:
+            у неё z-index: 10, поэтому она перекрывает остальные.
+        </p>
+
+        <div class="container absolute-container-3">
+            <div class="card card-p3-absolute card-p3-c1" style="background-color: #1e3f1a; color: #fff;">
+                <strong>Карточка 1</strong>
+                <p>z-index: 1</p>
+            </div>
+            <div class="card card-p3-absolute card-p3-c2" style="background-color: #274f22; color: #fff;">
+                <strong>Карточка 2</strong>
+                <p>z-index: 2</p>
+            </div>
+            <div class="card card-p3-c3-top" style="background-color: #386f31; color: #fff;">
+                <strong>Карточка 3</strong>
+                <p>z-index: 10 ← верхняя</p>
+            </div>
+            <div class="card card-p3-absolute card-p3-c4" style="background-color: #498a41; color: #fff;">
+                <strong>Карточка 4</strong>
+                <p>z-index: 3</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>🦡 Часть 4. Карточки по углам</h2>
+        <p>
+            Каждая карточка прижата к своему углу. Используются пары свойств:
+            <code>top</code>/<code>left</code> для верхних, <code>bottom</code>/<code>right</code>
+            для нижних. Родитель должен иметь <code>position: relative</code>.
+        </p>
+
+        <div class="container absolute-container-4">
+            <div class="card card-p4-absolute card-p4-top-left" style="background-color: #e6b852; color: #4a3718;">
+                <strong>Левый верхний</strong>
+                <p>top: 15px; left: 15px;</p>
+            </div>
+            <div class="card card-p4-absolute card-p4-top-right" style="background-color: #eed06d; color: #4a3718;">
+                <strong>Правый верхний</strong>
+                <p>top: 15px; right: 15px;</p>
+            </div>
+            <div class="card card-p4-absolute card-p4-bottom-left" style="background-color: #f3dc8b; color: #4a3718;">
+                <strong>Левый нижний</strong>
+                <p>bottom: 15px; left: 15px;</p>
+            </div>
+            <div class="card card-p4-absolute card-p4-bottom-right" style="background-color: #f7e6a7; color: #4a3718;">
+                <strong>Правый нижний</strong>
+                <p>bottom: 15px; right: 15px;</p>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
