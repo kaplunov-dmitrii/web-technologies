@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Котировки Мосбиржи</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fc;
+            margin: 0;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .chart-container {
+            flex: 1;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-height: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-box {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            height: 400px;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .sidebar h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #f4f7fc;
+            padding-bottom: 10px;
+        }
+        .company-btn {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .company-btn:hover {
+            background: #edf2f7;
+            border-color: #cbd5e1;
+        }
+        .company-btn.active {
+            background: #e0f2fe;
+            border-color: #7dd3fc;
+        }
+        .btn-ticker {
+            font-weight: bold;
+            color: #1e293b;
+            font-size: 1.1em;
+        }
+        .btn-name {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        .btn-cap {
+            color: #0284c7;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.4em;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h3>КОМПАНИИ</h3>
+        <div id="buttons-container">
+            <p style="color: #94a3b8;">Загрузка данных...</p>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2 id="chart-title">Выберите компанию для просмотра графика</h2>
+        <div class="chart-box">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tickers = ['ROSN', 'PLZL', 'VTBR', 'MAGN', 'FEES'];
+    let currentChart = null;
+
+    const marketDataUrl = `https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json?se
+curities=${tickers.join(',')}&iss.only=securities,marketdata&iss.meta=of`;
+
+    fetch(marketDataUrl)
+        .then(response => response.json())
+        .then(json => {
+            const secBlock = json.securities;
+            const mktBlock = json.marketdata;
+
+            const secIdIdx = secBlock.columns.indexOf('SECID');
+            const nameIdx = secBlock.columns.indexOf('SHORTNAME');
+            const issueSizeIdx = secBlock.columns.indexOf('ISSUESIZE');
+
+            const securitiesInfo = {};
+            secBlock.data.forEach(row => {
+                const ticker = row[secIdIdx];
+                securitiesInfo[ticker] = {
+                    name: row[nameIdx],
+                    issueSize: row[issueSizeIdx]
+                };
+            });
+
+            const mktSecIdIdx = mktBlock.columns.indexOf('SECID');
+            const lastIdx = mktBlock.columns.indexOf('LAST');
+            const prevPriceIdx = mktBlock.columns.indexOf('PREVPRICE');
+            const marketPriceIdx = mktBlock.columns.indexOf('MARKETPRICE');
+
+            const container = document.getElementById('buttons-container');
+            container.innerHTML = '';
+
+            mktBlock.data.forEach(row => {
+                const ticker = row[mktSecIdIdx];
+                const info = securitiesInfo[ticker];
+                if (!info) return;
+
+                let price = row[lastIdx] || row[marketPriceIdx] || row[prevPriceIdx];
+                let marketCapStr = 'Нет данных';
+
+                if (price && info.issueSize) {
+                    const marketCap = price * info.issueSize;
+                    if (marketCap >= 1e12) {
+                        marketCapStr = `${(marketCap / 1e12).toFixed(2)} трлн ₽`;
+                    } else if (marketCap >= 1e9) {
+                        marketCapStr = `${(marketCap / 1e9).toFixed(2)} млрд ₽`;
+                    } else {
+                        marketCapStr = `${marketCap.toFixed(0)} ₽`;
+                    }
+                }
+
+                const btn = document.createElement('button');
+                btn.className = 'company-btn';
+                btn.onclick = () => loadChart(ticker, info.name);
+                btn.innerHTML = `
+                    <span class="btn-ticker">${ticker}</span>
+                    <span class="btn-name">${info.name}</span>
+                    <span class="btn-cap">${marketCapStr}</span>
+                `;
+                container.appendChild(btn);
+            });
+
+            if (container.firstElementChild) {
+                container.firstElementChild.click();
+            }
+        })
+        .catch(error => console.error('Ошибка загрузки статики:', error));
+
+    function loadChart(ticker, companyName) {
+        document.querySelectorAll('.company-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.querySelector('.btn-ticker').textContent === ticker) {
+                btn.classList.add('active');
+            }
+        });
+
+        const till = new Date();
+        const from = new Date();
+        from.setMonth(till.getMonth() - 1);
+        const formatDate = (d) => d.toISOString().slice(0, 10);
+
+        const candlesUrl = `https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/${ticker}/candles.json?from=${formatDate(from)}&till=${formatDate(till)}&interval=24&iss.meta=off`;
+
+        fetch(candlesUrl)
+            .then(response => response.json())
+            .then(data => {
+                const block = data.candles;
+                const closeIndex = block.columns.indexOf('close');
+                const beginIndex = block.columns.indexOf('begin');
+                
+                const labels = block.data.map(row => row[beginIndex].slice(0, 10));
+                const prices = block.data.map(row => row[closeIndex]);
+
+                document.getElementById('chart-title').textContent = `${ticker} (${companyName}) — цена за месяц`;
+
+                if (currentChart) {
+                    currentChart.destroy();
+                }
+
+                const ctx = document.getElementById('myChart').getContext('2d');
+                currentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Цена закрытия, ₽',
+                            data: prices,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: false }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Ошибка загрузки свечей:', error));
+    }
+</script>
+</body>
+</html>
