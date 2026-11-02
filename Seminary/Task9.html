@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои задачи</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .app-container {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            border: 1px solid #e1e8ed;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a202c;
+            margin-bottom: 24px;
+        }
+        .task-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="date"], select {
+            padding: 10px 14px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        input[type="text"] {
+            flex: 1;
+        }
+        input[type="date"] {
+            width: 150px;
+        }
+        button {
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #2b6cb0;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-container select {
+            padding: 4px 8px;
+        }
+        .error-message {
+            color: #e53e3e;
+            font-size: 13px;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .task-item.overdue {
+            border-color: #feb2b2;
+            background-color: #fff5f5;
+        }
+        .task-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .task-title {
+            font-weight: 500;
+            color: #2d3748;
+            word-break: break-word;
+        }
+        .task-date {
+            font-size: 12px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-delete {
+            background-color: #e53e3e;
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        .btn-delete:hover {
+            background-color: #c53030;
+        }
+        .stats {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            text-align: right;
+            font-size: 13px;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">📋 Мои задачи</div>
+    
+    <form class="task-form" id="taskForm" onsubmit="addTask(event)">
+        <input type="text" id="taskTitle" placeholder="Название задачи" minlength="1" maxlength="100">
+        <input type="date" id="taskDate">
+        <button type="submit">Добавить</button>
+    </form>
+    <div class="error-message" id="errorMessage">Заполните название (до 100 симв.) и выберите корректную дату!</div>
+
+    <div class="filter-container">
+        <label for="statusFilter">Фильтр по статусу:</label>
+        <select id="statusFilter" onchange="render()">
+            <option value="all">Все</option>
+            <option value="todo">В работе</option>
+            <option value="done">Выполнено</option>
+            <option value="postponed">Отложено</option>
+        </select>
+    </div>
+
+    <div class="task-list" id="taskList"></div>
+
+    <div class="stats" id="statsCounter">Всего: 0 | Выполнено: 0 | Просрочено: 0</div>
+</div>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    function saveToLocalStorage() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function formatDate(dateStr) {
+        const [year, month, day] = dateStr.split('-');
+        return `${day}.${month}.${year}`;
+    }
+
+    function addTask(event) {
+        event.preventDefault();
+        
+        const titleInput = document.getElementById('taskTitle');
+        const dateInput = document.getElementById('taskDate');
+        const errorDiv = document.getElementById('errorMessage');
+
+        const title = titleInput.value.trim();
+        const date = dateInput.value;
+
+        if (!title || title.length > 100 || !date) {
+            errorDiv.style.display = 'block';
+            return;
+        }
+        errorDiv.style.display = 'none';
+
+        const newTask = {
+            id: Date.now(),
+            title: title,
+            date: date,
+            status: 'todo'
+        };
+
+        tasks.push(newTask);
+        saveToLocalStorage();
+        render();
+
+        titleInput.value = '';
+        dateInput.value = '';
+    }
+
+    function deleteTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (task && confirm(`Удалить задачу "${task.title}"?`)) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveToLocalStorage();
+            render();
+        }
+    }
+
+    function changeStatus(id, newStatus) {
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+            task.status = newStatus;
+            saveToLocalStorage();
+            render();
+        }
+    }
+
+    function render() {
+        const taskList = document.getElementById('taskList');
+        const filterValue = document.getElementById('statusFilter').value;
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const filteredTasks = tasks.filter(task => {
+            if (filterValue === 'all') return true;
+            return task.status === filterValue;
+        });
+
+        taskList.innerHTML = filteredTasks.map(task => {
+            const isOverdue = task.date < todayStr && task.status !== 'done';
+            const overdueClass = isOverdue ? 'overdue' : '';
+
+            return `
+                <div class="task-item ${overdueClass}">
+                    <div class="task-info">
+                        <div class="task-title">${escapeHTML(task.title)}</div>
+                        <div class="task-date">🗓️ ${formatDate(task.date)}</div>
+                    </div>
+                    <div class="task-actions">
+                        <select onchange="changeStatus(${task.id}, this.value)">
+                            <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>В работе</option>
+                            <option value="done" ${task.status === 'done' ? 'selected' : ''}>Выполнено</option>
+                            <option value="postponed" ${task.status === 'postponed' ? 'selected' : ''}>Отложено</option>
+                        </select>
+                        <button class="btn-delete" onclick="deleteTask(${task.id})">Удалить</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const total = tasks.length;
+        const doneCount = tasks.filter(t => t.status === 'done').length;
+        const overdueCount = tasks.filter(t => t.date < todayStr && t.status !== 'done').length;
+
+        document.getElementById('statsCounter').innerText = 
+            `Всего: ${total} | Выполнено: ${doneCount} | Просрочено: ${overdueCount}`;
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    render();
+</script>
+
+</body>
+</html>
